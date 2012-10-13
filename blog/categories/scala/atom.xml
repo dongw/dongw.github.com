@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Scala | Homerun]]></title>
+  <link href="http://dongw.github.com/blog/categories/scala/atom.xml" rel="self"/>
+  <link href="http://dongw.github.com/"/>
+  <updated>2012-10-14T01:14:55+08:00</updated>
+  <id>http://dongw.github.com/</id>
+  <author>
+    <name><![CDATA[Dong Wang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Scala的structual type的确慢不少]]></title>
+    <link href="http://dongw.github.com/blog/2012/03/13/scala-structual-type-is-slow/"/>
+    <updated>2012-03-13T01:12:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2012/03/13/scala-structual-type-is-slow</id>
+    <content type="html"><![CDATA[<p>Scala的Structual Type是用反射机制实现的。所以会慢一些。但我关心的是我经常用到的一个情况会慢多少。比如：
+<code>scala
+type HasId = {
+  def id: Long
+}
+case class Foo(val id: Long)
+</code>
+我经常会这样用：
+<code>scala
+def loop1(foos: Seq[HasId]) = {
+  var i = 0L
+  foos.foreach(f =&gt; i += f.id)
+  println(i)
+}
+</code>
+这样所有有id的方法我都可以用这个<code>loop1</code>方法了。如果不用Structual Type，可以这样做：
+<code>scala
+def loop2(foos: Seq[Foo]) = {
+  var i = 0L
+  foos.foreach(f =&gt; i += f.id)
+  println(i)
+}
+</code>
+在我的工作站上，如果给定一个10000000这么大的Seq[Foo]，<code>loop1</code>用了550ms,<code>loop2</code>用了262ms。</p>
+
+<h2>结论</h2>
+
+<p>在这种情况下，用Structual Type的效率降低一半左右。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[在Scala中如何避免导入implicit相关的定义]]></title>
+    <link href="http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/"/>
+    <updated>2011-03-11T13:06:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala</id>
+    <content type="html"><![CDATA[<p>Scala中的implicit能够让代码变的简洁很多。很多时候我们倾向于把这些implicit相关定义放到一个统一的地方，然后在各个package中应用。但每次用的时候，都需要做类是这样的import：</p>
+
+<p>``` scala</p>
+
+<pre><code>import com.readventure.MyImplicits._
+</code></pre>
+
+<p>```
+下面我告诉大家一个简单的方式，可以避免这种没有必要的imports。</p>
+
+<h2>方法</h2>
+
+<p>我们可以在com/readventure/下面定义下面这个trait：
+``` scala
+package com.readventure</p>
+
+<p>trait MyImplicits {
+  implicit def str2opt(s: String) = Option(s)
+  ...
+}
+<code>
+然后在每个要用到这些implicit的包下面（比如`com.readventure.test1`)放置这样叫`package.scala`的文件（文件名不重要）:
+</code> scala
+package com.readventure  // not 'package.readventure.test1'
+package object test1 extends a.Implicits { /<em> your other stuff goes here </em>/}
+```</p>
+
+<p>注意，这里的package的名字，以及package object的名字很重要，必须和相对应的路径对应。这样在<code>MyImplicits</code>里面的所有东西在<code>com.readventure.test1</code>的任何一个类里面都可以用了，不用显式import任何东西。比如：
+``` scala
+package com.readventure.test1</p>
+
+<p>class SomeClass {
+  def testImplicit(str: String): Option[String] = str
+}
+```</p>
+
+<p><code>Package object</code>是Scala2.8的新特性，如果有兴趣，可以看看<a href="http://www.artima.com/scalazine/articles/package_objects.html">这里</a>。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[有关Scala的 @Specialized Annotation]]></title>
+    <link href="http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized/"/>
+    <updated>2011-03-11T11:00:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized</id>
+    <content type="html"><![CDATA[<p>@specialized 主要用在Scala的范型上，使得Scala编译器能够在编译的时候，为某些primative类型提供一个更加高效的实现。这种高效源于避免了对指定primative类型的boxing和unboxing(int -> Int -> int)[<sup>1]。根据一个相关研究[<sup>2]，boxing和unboxing还是很花时间的。比如</sup></sup></p>
+
+<p>``` scala</p>
+
+<pre><code>class My [A] {
+  def iden(x: A): A = x
+}
+val a = new My[Int]
+for (i &lt;- 1 to 1000000) a.iden(i)
+</code></pre>
+
+<p>```</p>
+
+<p>需要花40纳秒。改为：
+``` scala
+class My [@specialized(Int) A] {</p>
+
+<pre><code>def iden(x: A): A = x
+</code></pre>
+
+<p>}
+val a = new My[Int]
+for (i &lt;- 1 to 1000000) a.iden(i)
+```
+就只需要17纳秒。</p>
+
+<p>下面看一个简单的用<code>@specialized</code>的例子：
+<code>scala
+class Example[@specialized(Int) T](value: T) {
+  def get(): T = value
+}
+</code>
+用命令<code>scalac -print test.scala</code>编译后变为：
+``` scala</p>
+
+<pre><code>    [[syntax trees at end of cleanup]]// Scala source: test.scala 
+    package &lt;empty&gt; { 
+      class Example extends java.lang.Object with ScalaObject { 
+        &lt;paramaccessor&gt; protected[this] val value: java.lang.Object = _; 
+        def get(): java.lang.Object = Example.this.value; 
+        &lt;specialized&gt; def get$mcI$sp(): Int = scala.Int.unbox(Example.this.get()); 
+        def this(value: java.lang.Object): Example = { 
+          Example.this.value = value; 
+          Example.super.this(); 
+          () 
+        } 
+      }; 
+      &lt;specialized&gt; class Example$mcI$sp extends Example { 
+        &lt;paramaccessor&gt; &lt;specialized&gt; protected[this] val value$mcI$sp: Int = _; 
+        override &lt;specialized&gt; def get(): Int = Example$mcI$sp.this.get$mcI$sp(); 
+        override &lt;specialized&gt; def get$mcI$sp(): Int = Example$mcI$sp.this.value$mcI$sp; 
+        override &lt;bridge&gt; &lt;specialized&gt; def get(): java.lang.Object = scala.Int.box(Example$mcI$sp.this.get()); 
+        &lt;specialized&gt; def this(value$mcI$sp: Int): Example$mcI$sp = { 
+          Example$mcI$sp.this.value$mcI$sp = value$mcI$sp; 
+          Example$mcI$sp.super.this(scala.Int.box(value$mcI$sp)); 
+          () 
+        } 
+      }
+    }
+</code></pre>
+
+<p>```</p>
+
+<p>可见有两个类被生成了。如果把源文件变为：
+<code>scala
+class Example[@specialized(Int, Long) T](value: T) {
+  def get(): T = value
+}
+</code>
+则有第三个类被生成： <br/>
+``` scala</p>
+
+<pre><code>    [[syntax trees at end of cleanup]]// Scala source: test.scala
+    package &lt;empty&gt; {
+      ...
+      ...
+      &lt;specialized&gt; class Example$mcJ$sp extends Example {
+        &lt;paramaccessor&gt; &lt;specialized&gt; protected[this] val value$mcJ$sp: Long = _;
+        override &lt;specialized&gt; def get(): Long = Example$mcJ$sp.this.get$mcJ$sp();
+        override &lt;specialized&gt; def get$mcJ$sp(): Long = Example$mcJ$sp.this.value$mcJ$sp;
+        override &lt;bridge&gt; &lt;specialized&gt; def get(): java.lang.Object = scala.Long.box(Example$mcJ$sp.this.get());
+        &lt;specialized&gt; def this(value$mcJ$sp: Long): Example$mcJ$sp = {
+          Example$mcJ$sp.this.value$mcJ$sp = value$mcJ$sp;
+          Example$mcJ$sp.super.this(scala.Long.box(value$mcJ$sp));
+          ()
+        }
+      }
+    }
+</code></pre>
+
+<p><code>``     
+理想情况是很多范型都对所有primative类型做specialized，不过这样编译后的代码就会成倍的增加了。Scala 2.8.1中只有下面的类有用到@specialized[^3]:
+</code>Function0, Function1, Function2, Tuple1, Tuple2, Product1, Product2, AbstractFunction0, AbstractFunction1, AbstractFunction2`.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Scala的循环可能很慢！]]></title>
+    <link href="http://dongw.github.com/blog/2011/03/10/careful-with-scala-for-loop/"/>
+    <updated>2011-03-10T10:39:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2011/03/10/careful-with-scala-for-loop</id>
+    <content type="html"><![CDATA[<p>下面这Java段代码只要90纳秒[<sup>1]:</sup></p>
+
+<p>``` scala
+int s = 0
+for (int i = 1; i &lt;= 2000; i++)
+  for (int j = 1; j &lt;= 2000; j++)</p>
+
+<pre><code>for (int k = 1; k &lt;= 2000; k++)
+  s += 1
+</code></pre>
+
+<p>```
+而相对应的Scala则是需要1.3秒</p>
+
+<p>``` scala
+var s = 0
+for (i &lt;- 1 to 2000;</p>
+
+<pre><code> j &lt;- 1 to 2000; 
+ k &lt;- 1 to 2000) 
+</code></pre>
+
+<p>  s += 1
+```
+同样，下面的代码和上面的完全等价：</p>
+
+<p>``` scala
+(1 to 2000).foreach(
+  i => (1 to 2000).foreach(</p>
+
+<pre><code>j =&gt; (1 to 2000).foreach(k =&gt; s += 1)
+</code></pre>
+
+<p>  )
+)
+```</p>
+
+<p>改为简单Scala for循环就可以快到60纳秒：</p>
+
+<p>``` scala</p>
+
+<pre><code>var s = 0
+var i = 1; var j = 1; var k = 1
+
+while (i &lt;= 2000) { j = 1
+  while (j &lt;= 2000) { k = 1
+    while (k &lt;= 2000) { k += 1 }
+    j += 1 }
+  i += 1 }
+</code></pre>
+
+<p>```</p>
+
+<p>想看看Scala的for循环可能有多可怕？如果我们编译：
+<code>scala
+object Test {
+  def test() {}
+}
+</code>
+我们得到以下bytecode：
+``` scala</p>
+
+<pre><code>    [[syntax trees at end of cleanup]]// Scala source: test.scala
+    package &lt;empty&gt; {
+      final object Test extends java.lang.Object with ScalaObject {
+        def test(): Unit = ();
+        def this(): object Test = {
+          Test.super.this();
+          ()
+        }
+      }
+    }
+</code></pre>
+
+<p>```</p>
+
+<p>但是如果我们加了第一段代码到<code>test</code>方法中，我们就可以发现编译的结果中overhead是多么大：
+``` scala</p>
+
+<pre><code>    [[syntax trees at end of cleanup]]// Scala source: test.scala
+    package &lt;empty&gt; {
+      final object Test extends java.lang.Object with ScalaObject {
+        def test(): Unit = {
+          var s$1: scala.runtime.IntRef = new scala.runtime.IntRef(0);
+          scala.this.Predef.intWrapper(1).to(2000).foreach$mVc$sp({
+            (new anonymous class Test$$anonfun$test$1(s$1): Function1)
+          })
+        };
+        def this(): object Test = {
+          Test.super.this();
+          ()
+        }
+      };
+      @SerialVersionUID(0) final &lt;synthetic&gt; class Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2 extends scala.runtime.AbstractFunction1$mcVI$sp with Serializable {
+        final def apply(k: Int): Unit = Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2.this.apply$mcVI$sp(k);
+        &lt;specialized&gt; def apply$mcVI$sp(v1: Int): Unit = Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2.this.$outer .Test$$anonfun$$anonfun$$$outer().s$1.elem = Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2.this.$outer .Test$$anonfun$$anonfun$$$outer().s$1.elem.+(1);
+        &lt;synthetic&gt; &lt;paramaccessor&gt; private[this] val $outer: anonymous class Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1 = _;
+        final &lt;bridge&gt; def apply(v1: java.lang.Object): java.lang.Object = {
+          Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2.this.apply(scala.Int.unbox(v1));
+          scala.runtime.BoxedUnit.UNIT
+        };
+        def this($outer: anonymous class Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1): anonymous class Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2 = {
+          if ($outer.eq(null))
+            throw new java.lang.NullPointerException()
+          else
+            Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2.this.$outer = $outer;
+          Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2.super.this();
+          ()
+        }
+      };
+      @SerialVersionUID(0) final &lt;synthetic&gt; class Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1 extends scala.runtime.AbstractFunction1$mcVI$sp with Serializable {
+        final def apply(j: Int): Unit = Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1.this.apply$mcVI$sp(j);
+        &lt;specialized&gt; def apply$mcVI$sp(v1: Int): Unit = scala.this.Predef.intWrapper(1).to(2000).foreach$mVc$sp({
+          (new anonymous class Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2(Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1.this): Function1)
+        });
+        &lt;synthetic&gt; &lt;paramaccessor&gt; private[this] val $outer: anonymous class Test$$anonfun$test$1 = _;
+        &lt;synthetic&gt; &lt;stable&gt; def Test$$anonfun$$anonfun$$$outer(): anonymous class Test$$anonfun$test$1 = Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1.this.$outer;
+        final &lt;bridge&gt; def apply(v1: java.lang.Object): java.lang.Object = {
+          Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1.this.apply(scala.Int.unbox(v1));
+          scala.runtime.BoxedUnit.UNIT
+        };
+        def this($outer: anonymous class Test$$anonfun$test$1): anonymous class Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1 = {
+          if ($outer.eq(null))
+            throw new java.lang.NullPointerException()
+          else
+            Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1.this.$outer = $outer;
+          Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1.super.this();
+          ()
+        }
+      };                                                                                                                                                             
+      @SerialVersionUID(0) final &lt;synthetic&gt; class Test$$anonfun$test$1 extends scala.runtime.AbstractFunction1$mcVI$sp with Serializable {
+        final def apply(i: Int): Unit = Test$$anonfun$test$1.this.apply$mcVI$sp(i);
+        &lt;specialized&gt; def apply$mcVI$sp(v1: Int): Unit = scala.this.Predef.intWrapper(1).to(2000).foreach$mVc$sp({
+          (new anonymous class Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1(Test$$anonfun$test$1.this): Function1)
+        });
+        final &lt;bridge&gt; def apply(v1: java.lang.Object): java.lang.Object = {
+          Test$$anonfun$test$1.this.apply(scala.Int.unbox(v1));
+          scala.runtime.BoxedUnit.UNIT
+        };
+        &lt;synthetic&gt; &lt;paramaccessor&gt; val s$1: scala.runtime.IntRef = _;
+        def this(s$1: scala.runtime.IntRef): anonymous class Test$$anonfun$test$1 = {
+          Test$$anonfun$test$1.this.s$1 = s$1;
+          Test$$anonfun$test$1.super.this();
+          ()
+        }
+      }
+    }
+</code></pre>
+
+<p>```</p>
+
+<h2>结论</h2>
+
+<p>在scala没有解决<a href="https://issues.scala-lang.org/browse/SI-1338">相关的bug #1138</a>前，还是小心用它的for循环，包括foreach。</p>
+
+<h2>一点更新:</h2>
+
+<p>我在自己的工作站上测试了下面两端代码的运行时间：</p>
+
+<p>三层循环，耗时7570毫秒：</p>
+
+<p>``` scala
+var s = 0
+for (i &lt;- 1 to 2000;</p>
+
+<pre><code> j &lt;- 1 to 2000; 
+ k &lt;- 1 to 2000) 
+</code></pre>
+
+<p>  s += 1
+```</p>
+
+<p>一层循环，耗时1毫秒：</p>
+
+<p><code>scala
+var s = 0
+for (i &lt;- 1 to 2000*2000*2000)
+  s += 1
+</code>
+看来对于单层循环，scala的效率还可以接受。</p>
+]]></content>
+  </entry>
+  
+</feed>

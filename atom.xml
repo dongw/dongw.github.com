@@ -1,16 +1,576 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[My Octopress Blog]]></title>
+  <title><![CDATA[Homerun]]></title>
   <link href="http://dongw.github.com/atom.xml" rel="self"/>
   <link href="http://dongw.github.com/"/>
-  <updated>2012-10-14T00:37:06+08:00</updated>
+  <updated>2012-10-14T01:14:55+08:00</updated>
   <id>http://dongw.github.com/</id>
   <author>
-    <name><![CDATA[Your Name]]></name>
+    <name><![CDATA[Dong Wang]]></name>
     
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Scala的structual type的确慢不少]]></title>
+    <link href="http://dongw.github.com/blog/2012/03/13/scala-structual-type-is-slow/"/>
+    <updated>2012-03-13T01:12:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2012/03/13/scala-structual-type-is-slow</id>
+    <content type="html"><![CDATA[<p>Scala的Structual Type是用反射机制实现的。所以会慢一些。但我关心的是我经常用到的一个情况会慢多少。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">type</span> <span class="kt">HasId</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">id</span><span class="k">:</span> <span class="kt">Long</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="k">case</span> <span class="k">class</span> <span class="nc">Foo</span><span class="o">(</span><span class="k">val</span> <span class="n">id</span><span class="k">:</span> <span class="kt">Long</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>我经常会这样用：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">def</span> <span class="n">loop1</span><span class="o">(</span><span class="n">foos</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">HasId</span><span class="o">])</span> <span class="k">=</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">i</span> <span class="k">=</span> <span class="mi">0L</span>
+</span><span class='line'>  <span class="n">foos</span><span class="o">.</span><span class="n">foreach</span><span class="o">(</span><span class="n">f</span> <span class="k">=&gt;</span> <span class="n">i</span> <span class="o">+=</span> <span class="n">f</span><span class="o">.</span><span class="n">id</span><span class="o">)</span>
+</span><span class='line'>  <span class="n">println</span><span class="o">(</span><span class="n">i</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这样所有有id的方法我都可以用这个<code>loop1</code>方法了。如果不用Structual Type，可以这样做：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">def</span> <span class="n">loop2</span><span class="o">(</span><span class="n">foos</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">Foo</span><span class="o">])</span> <span class="k">=</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">i</span> <span class="k">=</span> <span class="mi">0L</span>
+</span><span class='line'>  <span class="n">foos</span><span class="o">.</span><span class="n">foreach</span><span class="o">(</span><span class="n">f</span> <span class="k">=&gt;</span> <span class="n">i</span> <span class="o">+=</span> <span class="n">f</span><span class="o">.</span><span class="n">id</span><span class="o">)</span>
+</span><span class='line'>  <span class="n">println</span><span class="o">(</span><span class="n">i</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在我的工作站上，如果给定一个10000000这么大的Seq[Foo]，<code>loop1</code>用了550ms,<code>loop2</code>用了262ms。</p>
+
+<h2>结论</h2>
+
+<p>在这种情况下，用Structual Type的效率降低一半左右。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[在Scala中如何避免导入implicit相关的定义]]></title>
+    <link href="http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/"/>
+    <updated>2011-03-11T13:06:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala</id>
+    <content type="html"><![CDATA[<p>Scala中的implicit能够让代码变的简洁很多。很多时候我们倾向于把这些implicit相关定义放到一个统一的地方，然后在各个package中应用。但每次用的时候，都需要做类是这样的import：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">import</span> <span class="nn">com.readventure.MyImplicits._</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>下面我告诉大家一个简单的方式，可以避免这种没有必要的imports。</p>
+
+<h2>方法</h2>
+
+<p>我们可以在com/readventure/下面定义下面这个trait：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">package</span> <span class="nn">com.readventure</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">trait</span> <span class="nc">MyImplicits</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">implicit</span> <span class="k">def</span> <span class="n">str2opt</span><span class="o">(</span><span class="n">s</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Option</span><span class="o">(</span><span class="n">s</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">...</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后在每个要用到这些implicit的包下面（比如<code>com.readventure.test1</code>)放置这样叫<code>package.scala</code>的文件（文件名不重要）:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">package</span> <span class="nn">com.readventure</span>  <span class="c1">// not &#39;package.readventure.test1&#39;</span>
+</span><span class='line'><span class="k">package</span> <span class="nn">object</span> <span class="n">test1</span> <span class="k">extends</span> <span class="n">a</span><span class="o">.</span><span class="nc">Implicits</span> <span class="o">{</span> <span class="cm">/* your other stuff goes here */</span><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>注意，这里的package的名字，以及package object的名字很重要，必须和相对应的路径对应。这样在<code>MyImplicits</code>里面的所有东西在<code>com.readventure.test1</code>的任何一个类里面都可以用了，不用显式import任何东西。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">package</span> <span class="nn">com.readventure.test1</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">SomeClass</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">testImplicit</span><span class="o">(</span><span class="n">str</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="n">str</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>Package object</code>是Scala2.8的新特性，如果有兴趣，可以看看<a href="http://www.artima.com/scalazine/articles/package_objects.html">这里</a>。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[有关Scala的 @Specialized Annotation]]></title>
+    <link href="http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized/"/>
+    <updated>2011-03-11T11:00:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized</id>
+    <content type="html"><![CDATA[<p>@specialized 主要用在Scala的范型上，使得Scala编译器能够在编译的时候，为某些primative类型提供一个更加高效的实现。这种高效源于避免了对指定primative类型的boxing和unboxing(int -> Int -> int)[<sup>1]。根据一个相关研究[<sup>2]，boxing和unboxing还是很花时间的。比如</sup></sup></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">class</span> <span class="nc">My</span> <span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">def</span> <span class="n">iden</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="k">val</span> <span class="n">a</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">My</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span>
+</span><span class='line'><span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">1000000</span><span class="o">)</span> <span class="n">a</span><span class="o">.</span><span class="n">iden</span><span class="o">(</span><span class="n">i</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>需要花40纳秒。改为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">class</span> <span class="nc">My</span> <span class="o">[</span><span class="kt">@specialized</span><span class="o">(</span><span class="kt">Int</span><span class="o">)</span> <span class="kt">A</span><span class="o">]</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">def</span> <span class="n">iden</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="k">val</span> <span class="n">a</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">My</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span>
+</span><span class='line'><span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">1000000</span><span class="o">)</span> <span class="n">a</span><span class="o">.</span><span class="n">iden</span><span class="o">(</span><span class="n">i</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>就只需要17纳秒。</p>
+
+<p>下面看一个简单的用<code>@specialized</code>的例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">class</span> <span class="nc">Example</span><span class="o">[</span><span class="kt">@specialized</span><span class="o">(</span><span class="kt">Int</span><span class="o">)</span> <span class="kt">T</span><span class="o">](</span><span class="n">value</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用命令<code>scalac -print test.scala</code>编译后变为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'>    <span class="o">[[</span><span class="kt">syntax</span> <span class="kt">trees</span> <span class="kt">at</span> <span class="kt">end</span> <span class="kt">of</span> <span class="kt">cleanup</span><span class="o">]]</span><span class="c1">// Scala source: test.scala </span>
+</span><span class='line'>    <span class="k">package</span> <span class="err">&lt;</span><span class="nn">empty</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">class</span> <span class="nc">Example</span> <span class="k">extends</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="nc">Object</span> <span class="k">with</span> <span class="nc">ScalaObject</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="k">protected</span><span class="o">[</span><span class="kt">this</span><span class="o">]</span> <span class="k">val</span> <span class="n">value</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="nc">Example</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get$mcI$sp</span><span class="o">()</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">unbox</span><span class="o">(</span><span class="nc">Example</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get</span><span class="o">());</span>
+</span><span class='line'>        <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="n">value</span><span class="k">:</span> <span class="kt">java.lang.Object</span><span class="o">)</span><span class="k">:</span> <span class="kt">Example</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Example</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value</span> <span class="k">=</span> <span class="n">value</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Example</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">};</span>
+</span><span class='line'>      <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">class</span> <span class="nc">Example$mcI$sp</span> <span class="k">extends</span> <span class="nc">Example</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">protected</span><span class="o">[</span><span class="kt">this</span><span class="o">]</span> <span class="k">val</span> <span class="n">value$mcI$sp</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get$mcI$sp</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get$mcI$sp</span><span class="o">()</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value$mcI$sp</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">bridge</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">box</span><span class="o">(</span><span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get</span><span class="o">());</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="n">value$mcI$sp</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Example$mcI$sp</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value$mcI$sp</span> <span class="k">=</span> <span class="n">value$mcI$sp</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">(</span><span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">box</span><span class="o">(</span><span class="n">value$mcI$sp</span><span class="o">));</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可见有两个类被生成了。如果把源文件变为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">class</span> <span class="nc">Example</span><span class="o">[</span><span class="kt">@specialized</span><span class="o">(</span><span class="kt">Int</span>, <span class="kt">Long</span><span class="o">)</span> <span class="kt">T</span><span class="o">](</span><span class="n">value</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>则有第三个类被生成：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'>    <span class="o">[[</span><span class="kt">syntax</span> <span class="kt">trees</span> <span class="kt">at</span> <span class="kt">end</span> <span class="kt">of</span> <span class="kt">cleanup</span><span class="o">]]</span><span class="c1">// Scala source: test.scala</span>
+</span><span class='line'>    <span class="k">package</span> <span class="err">&lt;</span><span class="nn">empty</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>      <span class="o">...</span>
+</span><span class='line'>      <span class="o">...</span>
+</span><span class='line'>      <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">class</span> <span class="nc">Example$mcJ$sp</span> <span class="k">extends</span> <span class="nc">Example</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">protected</span><span class="o">[</span><span class="kt">this</span><span class="o">]</span> <span class="k">val</span> <span class="n">value$mcJ$sp</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get$mcJ$sp</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get$mcJ$sp</span><span class="o">()</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value$mcJ$sp</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">bridge</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="n">scala</span><span class="o">.</span><span class="nc">Long</span><span class="o">.</span><span class="n">box</span><span class="o">(</span><span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get</span><span class="o">());</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="n">value$mcJ$sp</span><span class="k">:</span> <span class="kt">Long</span><span class="o">)</span><span class="k">:</span> <span class="kt">Example$mcJ$sp</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value$mcJ$sp</span> <span class="k">=</span> <span class="n">value$mcJ$sp</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">(</span><span class="n">scala</span><span class="o">.</span><span class="nc">Long</span><span class="o">.</span><span class="n">box</span><span class="o">(</span><span class="n">value$mcJ$sp</span><span class="o">));</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>   <br/>
+理想情况是很多范型都对所有primative类型做specialized，不过这样编译后的代码就会成倍的增加了。Scala 2.8.1中只有下面的类有用到@specialized[<sup>3]:</sup>
+<code>Function0, Function1, Function2, Tuple1, Tuple2, Product1, Product2, AbstractFunction0, AbstractFunction1, AbstractFunction2</code>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Scala的循环可能很慢！]]></title>
+    <link href="http://dongw.github.com/blog/2011/03/10/careful-with-scala-for-loop/"/>
+    <updated>2011-03-10T10:39:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2011/03/10/careful-with-scala-for-loop</id>
+    <content type="html"><![CDATA[<p>下面这Java段代码只要90纳秒[<sup>1]:</sup></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="n">int</span> <span class="n">s</span> <span class="k">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="k">for</span> <span class="o">(</span><span class="n">int</span> <span class="n">i</span> <span class="k">=</span> <span class="mi">1</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">2000</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+</span><span class='line'>  <span class="k">for</span> <span class="o">(</span><span class="n">int</span> <span class="n">j</span> <span class="k">=</span> <span class="mi">1</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="mi">2000</span><span class="o">;</span> <span class="n">j</span><span class="o">++)</span>
+</span><span class='line'>    <span class="k">for</span> <span class="o">(</span><span class="n">int</span> <span class="n">k</span> <span class="k">=</span> <span class="mi">1</span><span class="o">;</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="mi">2000</span><span class="o">;</span> <span class="n">k</span><span class="o">++)</span>
+</span><span class='line'>      <span class="n">s</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>而相对应的Scala则是需要1.3秒</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">var</span> <span class="n">s</span> <span class="k">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">;</span>
+</span><span class='line'>     <span class="n">j</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">;</span>
+</span><span class='line'>     <span class="n">k</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">)</span>
+</span><span class='line'>  <span class="n">s</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>同样，下面的代码和上面的完全等价：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="o">(</span><span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">).</span><span class="n">foreach</span><span class="o">(</span>
+</span><span class='line'>  <span class="n">i</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">).</span><span class="n">foreach</span><span class="o">(</span>
+</span><span class='line'>    <span class="n">j</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">).</span><span class="n">foreach</span><span class="o">(</span><span class="n">k</span> <span class="k">=&gt;</span> <span class="n">s</span> <span class="o">+=</span> <span class="mi">1</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">)</span>
+</span><span class='line'><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>改为简单Scala for循环就可以快到60纳秒：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">var</span> <span class="n">s</span> <span class="k">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="k">var</span> <span class="n">i</span> <span class="k">=</span> <span class="mi">1</span><span class="o">;</span> <span class="k">var</span> <span class="n">j</span> <span class="k">=</span> <span class="mi">1</span><span class="o">;</span> <span class="k">var</span> <span class="n">k</span> <span class="k">=</span> <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span> <span class="o">(</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">2000</span><span class="o">)</span> <span class="o">{</span> <span class="n">j</span> <span class="k">=</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">while</span> <span class="o">(</span><span class="n">j</span> <span class="o">&lt;=</span> <span class="mi">2000</span><span class="o">)</span> <span class="o">{</span> <span class="n">k</span> <span class="k">=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">while</span> <span class="o">(</span><span class="n">k</span> <span class="o">&lt;=</span> <span class="mi">2000</span><span class="o">)</span> <span class="o">{</span> <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">}</span>
+</span><span class='line'>    <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">}</span>
+</span><span class='line'>  <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>想看看Scala的for循环可能有多可怕？如果我们编译：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">object</span> <span class="nc">Test</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">test</span><span class="o">()</span> <span class="o">{}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>我们得到以下bytecode：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'>    <span class="o">[[</span><span class="kt">syntax</span> <span class="kt">trees</span> <span class="kt">at</span> <span class="kt">end</span> <span class="kt">of</span> <span class="kt">cleanup</span><span class="o">]]</span><span class="c1">// Scala source: test.scala</span>
+</span><span class='line'>    <span class="k">package</span> <span class="err">&lt;</span><span class="nn">empty</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">final</span> <span class="k">object</span> <span class="nc">Test</span> <span class="k">extends</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="nc">Object</span> <span class="k">with</span> <span class="nc">ScalaObject</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">def</span> <span class="n">test</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">();</span>
+</span><span class='line'>        <span class="k">def</span> <span class="k">this</span><span class="o">()</span><span class="k">:</span> <span class="kt">object</span> <span class="kt">Test</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Test</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>但是如果我们加了第一段代码到<code>test</code>方法中，我们就可以发现编译的结果中overhead是多么大：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'>    <span class="o">[[</span><span class="kt">syntax</span> <span class="kt">trees</span> <span class="kt">at</span> <span class="kt">end</span> <span class="kt">of</span> <span class="kt">cleanup</span><span class="o">]]</span><span class="c1">// Scala source: test.scala</span>
+</span><span class='line'>    <span class="k">package</span> <span class="err">&lt;</span><span class="nn">empty</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">final</span> <span class="k">object</span> <span class="nc">Test</span> <span class="k">extends</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="nc">Object</span> <span class="k">with</span> <span class="nc">ScalaObject</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">def</span> <span class="n">test</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">var</span> <span class="n">s$1</span><span class="k">:</span> <span class="kt">scala.runtime.IntRef</span> <span class="o">=</span> <span class="k">new</span> <span class="n">scala</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="nc">IntRef</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+</span><span class='line'>          <span class="n">scala</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="nc">Predef</span><span class="o">.</span><span class="n">intWrapper</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="n">to</span><span class="o">(</span><span class="mi">2000</span><span class="o">).</span><span class="n">foreach$mVc$sp</span><span class="o">({</span>
+</span><span class='line'>            <span class="o">(</span><span class="k">new</span> <span class="n">anonymous</span> <span class="k">class</span> <span class="nc">Test$$anonfun$test$1</span><span class="o">(</span><span class="n">s$1</span><span class="o">)</span><span class="k">:</span> <span class="kt">Function1</span><span class="o">)</span>
+</span><span class='line'>          <span class="o">})</span>
+</span><span class='line'>        <span class="o">};</span>
+</span><span class='line'>        <span class="k">def</span> <span class="k">this</span><span class="o">()</span><span class="k">:</span> <span class="kt">object</span> <span class="kt">Test</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Test</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">};</span>
+</span><span class='line'>      <span class="nd">@SerialVersionUID</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="k">final</span> <span class="o">&lt;</span><span class="n">synthetic</span><span class="o">&gt;</span> <span class="k">class</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span> <span class="k">extends</span> <span class="n">scala</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="nc">AbstractFunction1$mcVI$sp</span> <span class="k">with</span> <span class="nc">Serializable</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">final</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">k</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">apply$mcVI$sp</span><span class="o">(</span><span class="n">k</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">apply$mcVI$sp</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="nc">$outer</span> <span class="o">.</span><span class="nc">Test$$anonfun$$anonfun$$$outer</span><span class="o">().</span><span class="n">s$1</span><span class="o">.</span><span class="n">elem</span> <span class="k">=</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="nc">$outer</span> <span class="o">.</span><span class="nc">Test$$anonfun$$anonfun$$$outer</span><span class="o">().</span><span class="n">s$1</span><span class="o">.</span><span class="n">elem</span><span class="o">.+(</span><span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">synthetic</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="k">private</span><span class="o">[</span><span class="kt">this</span><span class="o">]</span> <span class="k">val</span> <span class="nc">$outer</span><span class="k">:</span> <span class="kt">anonymous</span> <span class="kt">class</span> <span class="kt">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">final</span> <span class="o">&lt;</span><span class="n">bridge</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">java.lang.Object</span><span class="o">)</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">apply</span><span class="o">(</span><span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">unbox</span><span class="o">(</span><span class="n">v1</span><span class="o">));</span>
+</span><span class='line'>          <span class="n">scala</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="nc">BoxedUnit</span><span class="o">.</span><span class="nc">UNIT</span>
+</span><span class='line'>        <span class="o">};</span>
+</span><span class='line'>        <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="nc">$outer</span><span class="k">:</span> <span class="kt">anonymous</span> <span class="kt">class</span> <span class="kt">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span><span class="o">)</span><span class="k">:</span> <span class="kt">anonymous</span> <span class="kt">class</span> <span class="kt">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="o">(</span><span class="nc">$outer</span><span class="o">.</span><span class="n">eq</span><span class="o">(</span><span class="kc">null</span><span class="o">))</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="nc">NullPointerException</span><span class="o">()</span>
+</span><span class='line'>          <span class="k">else</span>
+</span><span class='line'>            <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="nc">$outer</span> <span class="k">=</span> <span class="nc">$outer</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">};</span>
+</span><span class='line'>      <span class="nd">@SerialVersionUID</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="k">final</span> <span class="o">&lt;</span><span class="n">synthetic</span><span class="o">&gt;</span> <span class="k">class</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span> <span class="k">extends</span> <span class="n">scala</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="nc">AbstractFunction1$mcVI$sp</span> <span class="k">with</span> <span class="nc">Serializable</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">final</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">j</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">apply$mcVI$sp</span><span class="o">(</span><span class="n">j</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">apply$mcVI$sp</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="n">scala</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="nc">Predef</span><span class="o">.</span><span class="n">intWrapper</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="n">to</span><span class="o">(</span><span class="mi">2000</span><span class="o">).</span><span class="n">foreach$mVc$sp</span><span class="o">({</span>
+</span><span class='line'>          <span class="o">(</span><span class="k">new</span> <span class="n">anonymous</span> <span class="k">class</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1$$anonfun$apply$mcVI$sp$2</span><span class="o">(</span><span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span><span class="o">.</span><span class="k">this</span><span class="o">)</span><span class="k">:</span> <span class="kt">Function1</span><span class="o">)</span>
+</span><span class='line'>        <span class="o">});</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">synthetic</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="k">private</span><span class="o">[</span><span class="kt">this</span><span class="o">]</span> <span class="k">val</span> <span class="nc">$outer</span><span class="k">:</span> <span class="kt">anonymous</span> <span class="kt">class</span> <span class="kt">Test$$anonfun$test$1</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">synthetic</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">stable</span><span class="o">&gt;</span> <span class="k">def</span> <span class="nc">Test$$anonfun$$anonfun$$$outer</span><span class="o">()</span><span class="k">:</span> <span class="kt">anonymous</span> <span class="kt">class</span> <span class="kt">Test$$anonfun$test$1</span> <span class="o">=</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="nc">$outer</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">final</span> <span class="o">&lt;</span><span class="n">bridge</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">java.lang.Object</span><span class="o">)</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">apply</span><span class="o">(</span><span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">unbox</span><span class="o">(</span><span class="n">v1</span><span class="o">));</span>
+</span><span class='line'>          <span class="n">scala</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="nc">BoxedUnit</span><span class="o">.</span><span class="nc">UNIT</span>
+</span><span class='line'>        <span class="o">};</span>
+</span><span class='line'>        <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="nc">$outer</span><span class="k">:</span> <span class="kt">anonymous</span> <span class="kt">class</span> <span class="kt">Test$$anonfun$test$1</span><span class="o">)</span><span class="k">:</span> <span class="kt">anonymous</span> <span class="kt">class</span> <span class="kt">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="o">(</span><span class="nc">$outer</span><span class="o">.</span><span class="n">eq</span><span class="o">(</span><span class="kc">null</span><span class="o">))</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="nc">NullPointerException</span><span class="o">()</span>
+</span><span class='line'>          <span class="k">else</span>
+</span><span class='line'>            <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="nc">$outer</span> <span class="k">=</span> <span class="nc">$outer</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">};</span>
+</span><span class='line'>      <span class="nd">@SerialVersionUID</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="k">final</span> <span class="o">&lt;</span><span class="n">synthetic</span><span class="o">&gt;</span> <span class="k">class</span> <span class="nc">Test$$anonfun$test$1</span> <span class="k">extends</span> <span class="n">scala</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="nc">AbstractFunction1$mcVI$sp</span> <span class="k">with</span> <span class="nc">Serializable</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">final</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">i</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="nc">Test$$anonfun$test$1</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">apply$mcVI$sp</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">apply$mcVI$sp</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="n">scala</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="nc">Predef</span><span class="o">.</span><span class="n">intWrapper</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="n">to</span><span class="o">(</span><span class="mi">2000</span><span class="o">).</span><span class="n">foreach$mVc$sp</span><span class="o">({</span>
+</span><span class='line'>          <span class="o">(</span><span class="k">new</span> <span class="n">anonymous</span> <span class="k">class</span> <span class="nc">Test$$anonfun$test$1$$anonfun$apply$mcVI$sp$1</span><span class="o">(</span><span class="nc">Test$$anonfun$test$1</span><span class="o">.</span><span class="k">this</span><span class="o">)</span><span class="k">:</span> <span class="kt">Function1</span><span class="o">)</span>
+</span><span class='line'>        <span class="o">});</span>
+</span><span class='line'>        <span class="k">final</span> <span class="o">&lt;</span><span class="n">bridge</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">java.lang.Object</span><span class="o">)</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Test$$anonfun$test$1</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">apply</span><span class="o">(</span><span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">unbox</span><span class="o">(</span><span class="n">v1</span><span class="o">));</span>
+</span><span class='line'>          <span class="n">scala</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="nc">BoxedUnit</span><span class="o">.</span><span class="nc">UNIT</span>
+</span><span class='line'>        <span class="o">};</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">synthetic</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="k">val</span> <span class="n">s$1</span><span class="k">:</span> <span class="kt">scala.runtime.IntRef</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="n">s$1</span><span class="k">:</span> <span class="kt">scala.runtime.IntRef</span><span class="o">)</span><span class="k">:</span> <span class="kt">anonymous</span> <span class="kt">class</span> <span class="kt">Test$$anonfun$test$1</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Test$$anonfun$test$1</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">s$1</span> <span class="k">=</span> <span class="n">s$1</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Test$$anonfun$test$1</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>  
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>结论</h2>
+
+<p>在scala没有解决<a href="https://issues.scala-lang.org/browse/SI-1338">相关的bug #1138</a>前，还是小心用它的for循环，包括foreach。</p>
+
+<h2>一点更新:</h2>
+
+<p>我在自己的工作站上测试了下面两端代码的运行时间：</p>
+
+<p>三层循环，耗时7570毫秒：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">var</span> <span class="n">s</span> <span class="k">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">;</span>
+</span><span class='line'>     <span class="n">j</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">;</span>
+</span><span class='line'>     <span class="n">k</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">)</span>
+</span><span class='line'>  <span class="n">s</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一层循环，耗时1毫秒：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">var</span> <span class="n">s</span> <span class="k">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">*</span><span class="mi">2000</span><span class="o">*</span><span class="mi">2000</span><span class="o">)</span>
+</span><span class='line'>  <span class="n">s</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>看来对于单层循环，scala的效率还可以接受。</p>
+]]></content>
+  </entry>
   
 </feed>

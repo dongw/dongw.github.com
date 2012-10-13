@@ -1,0 +1,371 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>有关Scala的 @Specialized Annotation - Homerun</title>
+  <meta name="author" content="Dong Wang">
+
+  
+  <meta name="description" content="@specialized 主要用在Scala的范型上，使得Scala编译器能够在编译的时候，为某些primative类型提供一个更加高效的实现。这种高效源于避免了对指定primative类型的boxing和unboxing(int -> Int -> int)[1]。根据一个相关研究[2]， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Homerun" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Homerun</a></h1>
+  
+    <h2>My name is Dong Wang, a X-Googler and Scala enthusiast.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dongw.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">有关Scala的 @Specialized Annotation</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-11T11:00:00+08:00" pubdate data-updated="true">03/11/11</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>@specialized 主要用在Scala的范型上，使得Scala编译器能够在编译的时候，为某些primative类型提供一个更加高效的实现。这种高效源于避免了对指定primative类型的boxing和unboxing(int -> Int -> int)[<sup>1]。根据一个相关研究[<sup>2]，boxing和unboxing还是很花时间的。比如</sup></sup></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">class</span> <span class="nc">My</span> <span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">def</span> <span class="n">iden</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="k">val</span> <span class="n">a</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">My</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span>
+</span><span class='line'><span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">1000000</span><span class="o">)</span> <span class="n">a</span><span class="o">.</span><span class="n">iden</span><span class="o">(</span><span class="n">i</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>需要花40纳秒。改为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">class</span> <span class="nc">My</span> <span class="o">[</span><span class="kt">@specialized</span><span class="o">(</span><span class="kt">Int</span><span class="o">)</span> <span class="kt">A</span><span class="o">]</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">def</span> <span class="n">iden</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="k">val</span> <span class="n">a</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">My</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span>
+</span><span class='line'><span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">1000000</span><span class="o">)</span> <span class="n">a</span><span class="o">.</span><span class="n">iden</span><span class="o">(</span><span class="n">i</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>就只需要17纳秒。</p>
+
+<p>下面看一个简单的用<code>@specialized</code>的例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">class</span> <span class="nc">Example</span><span class="o">[</span><span class="kt">@specialized</span><span class="o">(</span><span class="kt">Int</span><span class="o">)</span> <span class="kt">T</span><span class="o">](</span><span class="n">value</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用命令<code>scalac -print test.scala</code>编译后变为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'>    <span class="o">[[</span><span class="kt">syntax</span> <span class="kt">trees</span> <span class="kt">at</span> <span class="kt">end</span> <span class="kt">of</span> <span class="kt">cleanup</span><span class="o">]]</span><span class="c1">// Scala source: test.scala </span>
+</span><span class='line'>    <span class="k">package</span> <span class="err">&lt;</span><span class="nn">empty</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">class</span> <span class="nc">Example</span> <span class="k">extends</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="nc">Object</span> <span class="k">with</span> <span class="nc">ScalaObject</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="k">protected</span><span class="o">[</span><span class="kt">this</span><span class="o">]</span> <span class="k">val</span> <span class="n">value</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="nc">Example</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get$mcI$sp</span><span class="o">()</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">unbox</span><span class="o">(</span><span class="nc">Example</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get</span><span class="o">());</span>
+</span><span class='line'>        <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="n">value</span><span class="k">:</span> <span class="kt">java.lang.Object</span><span class="o">)</span><span class="k">:</span> <span class="kt">Example</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Example</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value</span> <span class="k">=</span> <span class="n">value</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Example</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">};</span>
+</span><span class='line'>      <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">class</span> <span class="nc">Example$mcI$sp</span> <span class="k">extends</span> <span class="nc">Example</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">protected</span><span class="o">[</span><span class="kt">this</span><span class="o">]</span> <span class="k">val</span> <span class="n">value$mcI$sp</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get$mcI$sp</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get$mcI$sp</span><span class="o">()</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value$mcI$sp</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">bridge</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">box</span><span class="o">(</span><span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get</span><span class="o">());</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="n">value$mcI$sp</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Example$mcI$sp</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value$mcI$sp</span> <span class="k">=</span> <span class="n">value$mcI$sp</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Example$mcI$sp</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">(</span><span class="n">scala</span><span class="o">.</span><span class="nc">Int</span><span class="o">.</span><span class="n">box</span><span class="o">(</span><span class="n">value$mcI$sp</span><span class="o">));</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可见有两个类被生成了。如果把源文件变为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">class</span> <span class="nc">Example</span><span class="o">[</span><span class="kt">@specialized</span><span class="o">(</span><span class="kt">Int</span>, <span class="kt">Long</span><span class="o">)</span> <span class="kt">T</span><span class="o">](</span><span class="n">value</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>则有第三个类被生成：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'>    <span class="o">[[</span><span class="kt">syntax</span> <span class="kt">trees</span> <span class="kt">at</span> <span class="kt">end</span> <span class="kt">of</span> <span class="kt">cleanup</span><span class="o">]]</span><span class="c1">// Scala source: test.scala</span>
+</span><span class='line'>    <span class="k">package</span> <span class="err">&lt;</span><span class="nn">empty</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>      <span class="o">...</span>
+</span><span class='line'>      <span class="o">...</span>
+</span><span class='line'>      <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">class</span> <span class="nc">Example$mcJ$sp</span> <span class="k">extends</span> <span class="nc">Example</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">paramaccessor</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">protected</span><span class="o">[</span><span class="kt">this</span><span class="o">]</span> <span class="k">val</span> <span class="n">value$mcJ$sp</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="k">_</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get$mcJ$sp</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get$mcJ$sp</span><span class="o">()</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value$mcJ$sp</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">override</span> <span class="o">&lt;</span><span class="n">bridge</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="n">get</span><span class="o">()</span><span class="k">:</span> <span class="kt">java.lang.Object</span> <span class="o">=</span> <span class="n">scala</span><span class="o">.</span><span class="nc">Long</span><span class="o">.</span><span class="n">box</span><span class="o">(</span><span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">get</span><span class="o">());</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">specialized</span><span class="o">&gt;</span> <span class="k">def</span> <span class="k">this</span><span class="o">(</span><span class="n">value$mcJ$sp</span><span class="k">:</span> <span class="kt">Long</span><span class="o">)</span><span class="k">:</span> <span class="kt">Example$mcJ$sp</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">this</span><span class="o">.</span><span class="n">value$mcJ$sp</span> <span class="k">=</span> <span class="n">value$mcJ$sp</span><span class="o">;</span>
+</span><span class='line'>          <span class="nc">Example$mcJ$sp</span><span class="o">.</span><span class="k">super</span><span class="o">.</span><span class="k">this</span><span class="o">(</span><span class="n">scala</span><span class="o">.</span><span class="nc">Long</span><span class="o">.</span><span class="n">box</span><span class="o">(</span><span class="n">value$mcJ$sp</span><span class="o">));</span>
+</span><span class='line'>          <span class="o">()</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>   <br/>
+理想情况是很多范型都对所有primative类型做specialized，不过这样编译后的代码就会成倍的增加了。Scala 2.8.1中只有下面的类有用到@specialized[<sup>3]:</sup>
+<code>Function0, Function1, Function2, Tuple1, Tuple2, Product1, Product2, AbstractFunction0, AbstractFunction1, AbstractFunction2</code>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Dong Wang</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-11T11:00:00+08:00" pubdate data-updated="true">03/11/11</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/scala/'>Scala</a>, <a class='category' href='/blog/categories/specialized/'>specialized</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized/" data-via="" data-counturl="http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2011/03/10/careful-with-scala-for-loop/" title="Previous Post: Scala的循环可能很慢！">&laquo; Scala的循环可能很慢！</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/" title="Next Post: 在Scala中如何避免导入implicit相关的定义">在Scala中如何避免导入implicit相关的定义 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/03/13/scala-structual-type-is-slow/">Scala的structual type的确慢不少</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/">在Scala中如何避免导入implicit相关的定义</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2011/03/11/scala-annotation-specialized/">有关Scala的 @Specialized Annotation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2011/03/10/careful-with-scala-for-loop/">Scala的循环可能很慢！</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - Dong Wang -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

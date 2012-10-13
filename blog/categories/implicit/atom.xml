@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: implicit | Homerun]]></title>
+  <link href="http://dongw.github.com/blog/categories/implicit/atom.xml" rel="self"/>
+  <link href="http://dongw.github.com/"/>
+  <updated>2012-10-14T01:14:55+08:00</updated>
+  <id>http://dongw.github.com/</id>
+  <author>
+    <name><![CDATA[Dong Wang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[在Scala中如何避免导入implicit相关的定义]]></title>
+    <link href="http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/"/>
+    <updated>2011-03-11T13:06:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala</id>
+    <content type="html"><![CDATA[<p>Scala中的implicit能够让代码变的简洁很多。很多时候我们倾向于把这些implicit相关定义放到一个统一的地方，然后在各个package中应用。但每次用的时候，都需要做类是这样的import：</p>
+
+<p>``` scala</p>
+
+<pre><code>import com.readventure.MyImplicits._
+</code></pre>
+
+<p>```
+下面我告诉大家一个简单的方式，可以避免这种没有必要的imports。</p>
+
+<h2>方法</h2>
+
+<p>我们可以在com/readventure/下面定义下面这个trait：
+``` scala
+package com.readventure</p>
+
+<p>trait MyImplicits {
+  implicit def str2opt(s: String) = Option(s)
+  ...
+}
+<code>
+然后在每个要用到这些implicit的包下面（比如`com.readventure.test1`)放置这样叫`package.scala`的文件（文件名不重要）:
+</code> scala
+package com.readventure  // not 'package.readventure.test1'
+package object test1 extends a.Implicits { /<em> your other stuff goes here </em>/}
+```</p>
+
+<p>注意，这里的package的名字，以及package object的名字很重要，必须和相对应的路径对应。这样在<code>MyImplicits</code>里面的所有东西在<code>com.readventure.test1</code>的任何一个类里面都可以用了，不用显式import任何东西。比如：
+``` scala
+package com.readventure.test1</p>
+
+<p>class SomeClass {
+  def testImplicit(str: String): Option[String] = str
+}
+```</p>
+
+<p><code>Package object</code>是Scala2.8的新特性，如果有兴趣，可以看看<a href="http://www.artima.com/scalazine/articles/package_objects.html">这里</a>。</p>
+]]></content>
+  </entry>
+  
+</feed>

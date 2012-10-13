@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: specialized | Homerun]]></title>
+  <link href="http://dongw.github.com/blog/categories/specialized/atom.xml" rel="self"/>
+  <link href="http://dongw.github.com/"/>
+  <updated>2012-10-14T01:14:55+08:00</updated>
+  <id>http://dongw.github.com/</id>
+  <author>
+    <name><![CDATA[Dong Wang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[有关Scala的 @Specialized Annotation]]></title>
+    <link href="http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized/"/>
+    <updated>2011-03-11T11:00:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized</id>
+    <content type="html"><![CDATA[<p>@specialized 主要用在Scala的范型上，使得Scala编译器能够在编译的时候，为某些primative类型提供一个更加高效的实现。这种高效源于避免了对指定primative类型的boxing和unboxing(int -> Int -> int)[<sup>1]。根据一个相关研究[<sup>2]，boxing和unboxing还是很花时间的。比如</sup></sup></p>
+
+<p>``` scala</p>
+
+<pre><code>class My [A] {
+  def iden(x: A): A = x
+}
+val a = new My[Int]
+for (i &lt;- 1 to 1000000) a.iden(i)
+</code></pre>
+
+<p>```</p>
+
+<p>需要花40纳秒。改为：
+``` scala
+class My [@specialized(Int) A] {</p>
+
+<pre><code>def iden(x: A): A = x
+</code></pre>
+
+<p>}
+val a = new My[Int]
+for (i &lt;- 1 to 1000000) a.iden(i)
+```
+就只需要17纳秒。</p>
+
+<p>下面看一个简单的用<code>@specialized</code>的例子：
+<code>scala
+class Example[@specialized(Int) T](value: T) {
+  def get(): T = value
+}
+</code>
+用命令<code>scalac -print test.scala</code>编译后变为：
+``` scala</p>
+
+<pre><code>    [[syntax trees at end of cleanup]]// Scala source: test.scala 
+    package &lt;empty&gt; { 
+      class Example extends java.lang.Object with ScalaObject { 
+        &lt;paramaccessor&gt; protected[this] val value: java.lang.Object = _; 
+        def get(): java.lang.Object = Example.this.value; 
+        &lt;specialized&gt; def get$mcI$sp(): Int = scala.Int.unbox(Example.this.get()); 
+        def this(value: java.lang.Object): Example = { 
+          Example.this.value = value; 
+          Example.super.this(); 
+          () 
+        } 
+      }; 
+      &lt;specialized&gt; class Example$mcI$sp extends Example { 
+        &lt;paramaccessor&gt; &lt;specialized&gt; protected[this] val value$mcI$sp: Int = _; 
+        override &lt;specialized&gt; def get(): Int = Example$mcI$sp.this.get$mcI$sp(); 
+        override &lt;specialized&gt; def get$mcI$sp(): Int = Example$mcI$sp.this.value$mcI$sp; 
+        override &lt;bridge&gt; &lt;specialized&gt; def get(): java.lang.Object = scala.Int.box(Example$mcI$sp.this.get()); 
+        &lt;specialized&gt; def this(value$mcI$sp: Int): Example$mcI$sp = { 
+          Example$mcI$sp.this.value$mcI$sp = value$mcI$sp; 
+          Example$mcI$sp.super.this(scala.Int.box(value$mcI$sp)); 
+          () 
+        } 
+      }
+    }
+</code></pre>
+
+<p>```</p>
+
+<p>可见有两个类被生成了。如果把源文件变为：
+<code>scala
+class Example[@specialized(Int, Long) T](value: T) {
+  def get(): T = value
+}
+</code>
+则有第三个类被生成： <br/>
+``` scala</p>
+
+<pre><code>    [[syntax trees at end of cleanup]]// Scala source: test.scala
+    package &lt;empty&gt; {
+      ...
+      ...
+      &lt;specialized&gt; class Example$mcJ$sp extends Example {
+        &lt;paramaccessor&gt; &lt;specialized&gt; protected[this] val value$mcJ$sp: Long = _;
+        override &lt;specialized&gt; def get(): Long = Example$mcJ$sp.this.get$mcJ$sp();
+        override &lt;specialized&gt; def get$mcJ$sp(): Long = Example$mcJ$sp.this.value$mcJ$sp;
+        override &lt;bridge&gt; &lt;specialized&gt; def get(): java.lang.Object = scala.Long.box(Example$mcJ$sp.this.get());
+        &lt;specialized&gt; def this(value$mcJ$sp: Long): Example$mcJ$sp = {
+          Example$mcJ$sp.this.value$mcJ$sp = value$mcJ$sp;
+          Example$mcJ$sp.super.this(scala.Long.box(value$mcJ$sp));
+          ()
+        }
+      }
+    }
+</code></pre>
+
+<p><code>``     
+理想情况是很多范型都对所有primative类型做specialized，不过这样编译后的代码就会成倍的增加了。Scala 2.8.1中只有下面的类有用到@specialized[^3]:
+</code>Function0, Function1, Function2, Tuple1, Tuple2, Product1, Product2, AbstractFunction0, AbstractFunction1, AbstractFunction2`.</p>
+]]></content>
+  </entry>
+  
+</feed>

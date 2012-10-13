@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>在Scala中如何避免导入implicit相关的定义 - Homerun</title>
+  <meta name="author" content="Dong Wang">
+
+  
+  <meta name="description" content="Scala中的implicit能够让代码变的简洁很多。很多时候我们倾向于把这些implicit相关定义放到一个统一的地方，然后在各个package中应用。但每次用的时候，都需要做类是这样的import： 1
+import com.readventure.MyImplicits._ &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Homerun" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Homerun</a></h1>
+  
+    <h2>My name is Dong Wang, a X-Googler and Scala enthusiast.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dongw.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">在Scala中如何避免导入implicit相关的定义</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-11T13:06:00+08:00" pubdate data-updated="true">03/11/11</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Scala中的implicit能够让代码变的简洁很多。很多时候我们倾向于把这些implicit相关定义放到一个统一的地方，然后在各个package中应用。但每次用的时候，都需要做类是这样的import：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">import</span> <span class="nn">com.readventure.MyImplicits._</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>下面我告诉大家一个简单的方式，可以避免这种没有必要的imports。</p>
+
+<h2>方法</h2>
+
+<p>我们可以在com/readventure/下面定义下面这个trait：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">package</span> <span class="nn">com.readventure</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">trait</span> <span class="nc">MyImplicits</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">implicit</span> <span class="k">def</span> <span class="n">str2opt</span><span class="o">(</span><span class="n">s</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Option</span><span class="o">(</span><span class="n">s</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">...</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后在每个要用到这些implicit的包下面（比如<code>com.readventure.test1</code>)放置这样叫<code>package.scala</code>的文件（文件名不重要）:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">package</span> <span class="nn">com.readventure</span>  <span class="c1">// not &#39;package.readventure.test1&#39;</span>
+</span><span class='line'><span class="k">package</span> <span class="nn">object</span> <span class="n">test1</span> <span class="k">extends</span> <span class="n">a</span><span class="o">.</span><span class="nc">Implicits</span> <span class="o">{</span> <span class="cm">/* your other stuff goes here */</span><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>注意，这里的package的名字，以及package object的名字很重要，必须和相对应的路径对应。这样在<code>MyImplicits</code>里面的所有东西在<code>com.readventure.test1</code>的任何一个类里面都可以用了，不用显式import任何东西。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">package</span> <span class="nn">com.readventure.test1</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">SomeClass</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">testImplicit</span><span class="o">(</span><span class="n">str</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="n">str</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>Package object</code>是Scala2.8的新特性，如果有兴趣，可以看看<a href="http://www.artima.com/scalazine/articles/package_objects.html">这里</a>。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Dong Wang</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-11T13:06:00+08:00" pubdate data-updated="true">03/11/11</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/scala/'>Scala</a>, <a class='category' href='/blog/categories/implicit/'>implicit</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/" data-via="" data-counturl="http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2011/03/11/scala-annotation-specialized/" title="Previous Post: 有关Scala的 @Specialized Annotation">&laquo; 有关Scala的 @Specialized Annotation</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2012/03/13/scala-structual-type-is-slow/" title="Next Post: Scala的structual type的确慢不少">Scala的structual type的确慢不少 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/03/13/scala-structual-type-is-slow/">Scala的structual type的确慢不少</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/">在Scala中如何避免导入implicit相关的定义</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2011/03/11/scala-annotation-specialized/">有关Scala的 @Specialized Annotation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2011/03/10/careful-with-scala-for-loop/">Scala的循环可能很慢！</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - Dong Wang -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

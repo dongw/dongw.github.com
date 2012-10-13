@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Performance | Homerun]]></title>
+  <link href="http://dongw.github.com/blog/categories/performance/atom.xml" rel="self"/>
+  <link href="http://dongw.github.com/"/>
+  <updated>2012-10-14T01:14:55+08:00</updated>
+  <id>http://dongw.github.com/</id>
+  <author>
+    <name><![CDATA[Dong Wang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Scala的structual type的确慢不少]]></title>
+    <link href="http://dongw.github.com/blog/2012/03/13/scala-structual-type-is-slow/"/>
+    <updated>2012-03-13T01:12:00+08:00</updated>
+    <id>http://dongw.github.com/blog/2012/03/13/scala-structual-type-is-slow</id>
+    <content type="html"><![CDATA[<p>Scala的Structual Type是用反射机制实现的。所以会慢一些。但我关心的是我经常用到的一个情况会慢多少。比如：
+<code>scala
+type HasId = {
+  def id: Long
+}
+case class Foo(val id: Long)
+</code>
+我经常会这样用：
+<code>scala
+def loop1(foos: Seq[HasId]) = {
+  var i = 0L
+  foos.foreach(f =&gt; i += f.id)
+  println(i)
+}
+</code>
+这样所有有id的方法我都可以用这个<code>loop1</code>方法了。如果不用Structual Type，可以这样做：
+<code>scala
+def loop2(foos: Seq[Foo]) = {
+  var i = 0L
+  foos.foreach(f =&gt; i += f.id)
+  println(i)
+}
+</code>
+在我的工作站上，如果给定一个10000000这么大的Seq[Foo]，<code>loop1</code>用了550ms,<code>loop2</code>用了262ms。</p>
+
+<h2>结论</h2>
+
+<p>在这种情况下，用Structual Type的效率降低一半左右。</p>
+]]></content>
+  </entry>
+  
+</feed>

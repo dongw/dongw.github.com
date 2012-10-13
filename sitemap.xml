@@ -1,11 +1,29 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
+        <loc>http://dongw.github.com/blog/2011/03/10/careful-with-scala-for-loop/</loc>
+        <lastmod>2012-10-14T01:11:33+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://dongw.github.com/blog/2011/03/11/scala-annotation-specialized/</loc>
+        <lastmod>2012-10-14T01:11:08+08:00</lastmod>
+    </url>
+    <url>
+        <loc>
+            http://dongw.github.com/blog/2011/03/11/avoid-explicit-importing-implicit-in-scala/
+        </loc>
+        <lastmod>2012-10-14T01:10:18+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://dongw.github.com/blog/2012/03/13/scala-structual-type-is-slow/</loc>
+        <lastmod>2012-10-14T01:14:55+08:00</lastmod>
+    </url>
+    <url>
         <loc>http://dongw.github.com/blog/archives/</loc>
-        <lastmod>2012-10-14T00:36:31+08:00</lastmod>
+        <lastmod>2012-10-14T01:14:55+08:00</lastmod>
     </url>
     <url>
         <loc>http://dongw.github.com/</loc>
-        <lastmod>2012-10-14T00:36:31+08:00</lastmod>
+        <lastmod>2012-10-14T01:14:55+08:00</lastmod>
     </url>
 </urlset>
